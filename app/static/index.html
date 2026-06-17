@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Download YouTube Playlist</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <h1>Download YouTube Playlist</h1>
+        <p class="tagline">Paste a link. Pick music or video. Save to your computer.</p>
+      </header>
+
+      <ol class="steps">
+        <li class="step step-active" id="step-1-label">
+          <span class="step-num">1</span>
+          <span>Paste your playlist link</span>
+        </li>
+        <li class="step" id="step-2-label">
+          <span class="step-num">2</span>
+          <span>Choose music or video</span>
+        </li>
+        <li class="step" id="step-3-label">
+          <span class="step-num">3</span>
+          <span>Save files to your computer</span>
+        </li>
+      </ol>
+
+      <main class="card">
+        <!-- Step 1 -->
+        <section class="section" id="section-link">
+          <h2>Step 1 — Paste your playlist link</h2>
+          <p class="help">
+            On YouTube: open the playlist → click <strong>Share</strong> → click
+            <strong>Copy</strong> → paste below.
+          </p>
+
+          <form id="playlist-form">
+            <input
+              id="playlist-url"
+              type="text"
+              placeholder="Paste your YouTube playlist link here"
+              autocomplete="off"
+              required
+            />
+            <button type="submit" id="load-btn" class="btn btn-big">
+              Find my videos
+            </button>
+          </form>
+        </section>
+
+        <!-- Step 2 -->
+        <section class="section" id="section-format">
+          <h2>Step 2 — What do you want?</h2>
+          <div class="format-cards">
+            <button type="button" class="format-card active" data-format="mp3">
+              <span class="format-emoji" aria-hidden="true">🎵</span>
+              <span class="format-name">Music</span>
+              <span class="format-desc">Just the sound (MP3)</span>
+            </button>
+            <button type="button" class="format-card" data-format="mp4">
+              <span class="format-emoji" aria-hidden="true">🎬</span>
+              <span class="format-name">Video</span>
+              <span class="format-desc">Full video (MP4)</span>
+            </button>
+          </div>
+        </section>
+
+        <div id="message" class="message" hidden></div>
+
+        <!-- Step 3 -->
+        <section class="section" id="section-videos" hidden>
+          <h2>Step 3 — Save to your computer</h2>
+          <p class="playlist-info">
+            <strong id="playlist-title"></strong><br />
+            <span id="playlist-meta"></span>
+          </p>
+
+          <button type="button" id="download-all-btn" class="btn btn-big btn-green">
+            Save all videos to my computer
+          </button>
+          <p class="help small">This may take a while for long playlists. Please wait.</p>
+
+          <ul id="video-list" class="video-list"></ul>
+        </section>
+      </main>
+
+      <footer>
+        <p>For personal use only.</p>
+      </footer>
+    </div>
+
+    <template id="video-row-template">
+      <li class="video-row">
+        <span class="video-number"></span>
+        <img class="thumb" alt="" width="100" height="56" />
+        <div class="video-info">
+          <p class="video-title"></p>
+          <p class="video-status">Not saved yet</p>
+        </div>
+        <button type="button" class="btn save-btn">Save to my computer</button>
+      </li>
+    </template>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
