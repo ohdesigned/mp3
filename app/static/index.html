@@ -3,104 +3,134 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Download YouTube Playlist</title>
+    <title>playlist converter ~</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
-    <div class="page">
-      <header>
-        <h1>Download YouTube Playlist</h1>
-        <p class="tagline">Paste a link. Pick music or video. Save to your computer.</p>
-      </header>
-
-      <ol class="steps">
-        <li class="step step-active" id="step-1-label">
-          <span class="step-num">1</span>
-          <span>Paste your playlist link</span>
-        </li>
-        <li class="step" id="step-2-label">
-          <span class="step-num">2</span>
-          <span>Choose music or video</span>
-        </li>
-        <li class="step" id="step-3-label">
-          <span class="step-num">3</span>
-          <span>Save files to your computer</span>
-        </li>
-      </ol>
-
-      <main class="card">
-        <!-- Step 1 -->
-        <section class="section" id="section-link">
-          <h2>Step 1 — Paste your playlist link</h2>
-          <p class="help">
-            On YouTube: open the playlist → click <strong>Share</strong> → click
-            <strong>Copy</strong> → paste below.
-          </p>
-
-          <form id="playlist-form">
-            <input
-              id="playlist-url"
-              type="text"
-              placeholder="Paste your YouTube playlist link here"
-              autocomplete="off"
-              required
-            />
-            <button type="submit" id="load-btn" class="btn btn-big">
-              Find my videos
-            </button>
-          </form>
-        </section>
-
-        <!-- Step 2 -->
-        <section class="section" id="section-format">
-          <h2>Step 2 — What do you want?</h2>
-          <div class="format-cards">
-            <button type="button" class="format-card active" data-format="mp3">
-              <span class="format-emoji" aria-hidden="true">🎵</span>
-              <span class="format-name">Music</span>
-              <span class="format-desc">Just the sound (MP3)</span>
-            </button>
-            <button type="button" class="format-card" data-format="mp4">
-              <span class="format-emoji" aria-hidden="true">🎬</span>
-              <span class="format-name">Video</span>
-              <span class="format-desc">Full video (MP4)</span>
-            </button>
+    <div class="desktop">
+      <div class="window">
+        <!-- title bar -->
+        <div class="titlebar">
+          <div class="titlebar-left">
+            <span class="dot"></span>
+            <span class="dot"></span>
           </div>
-        </section>
+          <span class="titlebar-title">playlist converter.exe</span>
+          <div class="titlebar-right">
+            <span class="win-btn">−</span>
+            <span class="win-btn">□</span>
+            <span class="win-btn">×</span>
+          </div>
+        </div>
 
-        <div id="message" class="message" hidden></div>
+        <div class="window-body">
+          <!-- sidebar -->
+          <aside class="sidebar">
+            <div class="sidebar-icon" aria-hidden="true">🌿</div>
 
-        <!-- Step 3 -->
-        <section class="section" id="section-videos" hidden>
-          <h2>Step 3 — Save to your computer</h2>
-          <p class="playlist-info">
-            <strong id="playlist-title"></strong><br />
-            <span id="playlist-meta"></span>
-          </p>
+            <div class="box">
+              <h2 class="box-label">how to use</h2>
+              <ol class="howto">
+                <li>paste your youtube playlist link</li>
+                <li>pick mp3 or mp4</li>
+                <li>choose where to save</li>
+                <li>click save on each video</li>
+              </ol>
+            </div>
 
-          <button type="button" id="download-all-btn" class="btn btn-big btn-green">
-            Save all videos to my computer
-          </button>
-          <p class="help small">This may take a while for long playlists. Please wait.</p>
+            <div class="box">
+              <h2 class="box-label">save folder</h2>
+              <p id="folder-label" class="folder-label">not chosen yet</p>
+              <button type="button" id="pick-folder-btn" class="btn btn-cream">
+                choose folder ~
+              </button>
+              <p class="tiny">your files will go into this folder</p>
+            </div>
 
-          <ul id="video-list" class="video-list"></ul>
-        </section>
-      </main>
+            <div class="frog" aria-hidden="true">🐸</div>
+          </aside>
 
-      <footer>
-        <p>For personal use only.</p>
-      </footer>
+          <!-- main -->
+          <main class="main">
+            <header class="main-header">
+              <h1>@ playlist converter</h1>
+              <span class="subtitle">youtube → your computer</span>
+            </header>
+
+            <!-- link box -->
+            <div class="box box-cream">
+              <h2 class="box-label">paste your link here ~</h2>
+              <p class="hint">
+                on youtube: open playlist → share → copy link → paste below
+              </p>
+              <form id="playlist-form">
+                <textarea
+                  id="playlist-url"
+                  rows="3"
+                  placeholder="https://www.youtube.com/playlist?list=..."
+                  required
+                ></textarea>
+                <button type="submit" id="load-btn" class="btn btn-green">
+                  find videos ~
+                </button>
+              </form>
+            </div>
+
+            <!-- format picker -->
+            <div class="box box-cream">
+              <h2 class="box-label">pick a format ~</h2>
+              <div class="format-row">
+                <button type="button" class="format-btn active" data-format="mp3">
+                  mp3
+                  <span class="format-sub">music / audio</span>
+                </button>
+                <button type="button" class="format-btn" data-format="mp4">
+                  mp4
+                  <span class="format-sub">full video</span>
+                </button>
+              </div>
+            </div>
+
+            <div id="message" class="message" hidden></div>
+
+            <!-- results -->
+            <section id="section-videos" class="box box-cream" hidden>
+              <h2 class="box-label">your videos ~</h2>
+              <p class="playlist-info">
+                <strong id="playlist-title"></strong><br />
+                <span id="playlist-meta"></span>
+              </p>
+
+              <button type="button" id="download-all-btn" class="btn btn-green">
+                save all ~
+              </button>
+
+              <ul id="video-list" class="video-list"></ul>
+            </section>
+
+            <div class="box box-cream footer-box">
+              <p class="tiny center">for personal use only · be kind to creators</p>
+            </div>
+          </main>
+        </div>
+      </div>
     </div>
 
     <template id="video-row-template">
       <li class="video-row">
-        <span class="video-number"></span>
-        <img class="thumb" alt="" width="100" height="56" />
+        <span class="video-num"></span>
+        <img class="thumb" alt="" width="80" height="45" />
         <div class="video-info">
           <p class="video-title"></p>
-          <p class="video-status">Not saved yet</p>
+          <p class="video-status">waiting...</p>
         </div>
-        <button type="button" class="btn save-btn">Save to my computer</button>
+        <button type="button" class="btn btn-cream btn-small save-btn">save ~</button>
       </li>
     </template>
 

@@ -7,25 +7,15 @@ const playlistTitleEl = document.getElementById("playlist-title");
 const playlistMetaEl = document.getElementById("playlist-meta");
 const videoListEl = document.getElementById("video-list");
 const downloadAllBtn = document.getElementById("download-all-btn");
-const formatCards = document.querySelectorAll(".format-card");
+const formatButtons = document.querySelectorAll(".format-btn");
+const pickFolderBtn = document.getElementById("pick-folder-btn");
+const folderLabel = document.getElementById("folder-label");
 const rowTemplate = document.getElementById("video-row-template");
-
-const stepLabels = [
-  document.getElementById("step-1-label"),
-  document.getElementById("step-2-label"),
-  document.getElementById("step-3-label"),
-];
 
 let selectedFormat = "mp3";
 let currentVideos = [];
-
-function setStep(activeIndex) {
-  stepLabels.forEach((el, i) => {
-    el.classList.remove("step-active", "step-done");
-    if (i < activeIndex) el.classList.add("step-done");
-    if (i === activeIndex) el.classList.add("step-active");
-  });
-}
+let saveDirectory = null;
+const folderSupported = "showDirectoryPicker" in window;
 
 function showMessage(text, type = "info") {
   messageEl.hidden = false;
@@ -37,33 +27,93 @@ function hideMessage() {
   messageEl.hidden = true;
 }
 
-function triggerFileDownload(url, filename) {
+function updateFolderUI() {
+  if (saveDirectory) {
+    folderLabel.textContent = `📁 ${saveDirectory.name}`;
+    folderLabel.classList.add("chosen");
+  } else if (folderSupported) {
+    folderLabel.textContent = "not chosen yet";
+    folderLabel.classList.remove("chosen");
+  } else {
+    folderLabel.textContent = "browser will ask each time";
+    folderLabel.classList.add("chosen");
+  }
+}
+
+async function pickFolder() {
+  if (!folderSupported) {
+    showMessage(
+      "Your browser will ask where to save each file when you click save.",
+      "info"
+    );
+    return;
+  }
+
+  try {
+    saveDirectory = await window.showDirectoryPicker({ mode: "readwrite" });
+    updateFolderUI();
+    hideMessage();
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      showMessage("Could not open that folder. Try again.", "error");
+    }
+  }
+}
+
+async function saveFileToFolder(filename, blob) {
+  if (saveDirectory && folderSupported) {
+    const handle = await saveDirectory.getFileHandle(filename, { create: true });
+    const writable = await handle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+    return `saved to ${saveDirectory.name}`;
+  }
+
+  if ("showSaveFilePicker" in window) {
+    const ext = filename.split(".").pop();
+    const handle = await window.showSaveFilePicker({
+      suggestedName: filename,
+      types: [
+        {
+          description: ext.toUpperCase(),
+          accept: { [`audio/${ext}`]: [`.${ext}`], [`video/${ext}`]: [`.${ext}`] },
+        },
+      ],
+    });
+    const writable = await handle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+    return "saved to your computer";
+  }
+
   const link = document.createElement("a");
-  link.href = url;
+  link.href = URL.createObjectURL(blob);
   link.download = filename;
   document.body.appendChild(link);
   link.click();
   link.remove();
+  return "saved to downloads folder";
 }
 
-formatCards.forEach((card) => {
-  card.addEventListener("click", () => {
-    selectedFormat = card.dataset.format;
-    formatCards.forEach((c) => c.classList.toggle("active", c === card));
-    setStep(1);
+formatButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    selectedFormat = btn.dataset.format;
+    formatButtons.forEach((b) => b.classList.toggle("active", b === btn));
   });
 });
+
+pickFolderBtn.addEventListener("click", pickFolder);
 
 function createVideoRow(video, index) {
   const node = rowTemplate.content.cloneNode(true);
   const row = node.querySelector(".video-row");
-  const number = node.querySelector(".video-number");
+  const num = node.querySelector(".video-num");
   const thumb = node.querySelector(".thumb");
   const title = node.querySelector(".video-title");
   const status = node.querySelector(".video-status");
   const saveBtn = node.querySelector(".save-btn");
 
-  number.textContent = index + 1;
+  num.textContent = index + 1;
   thumb.src = video.thumbnail;
   thumb.alt = video.title;
   title.textContent = video.title;
@@ -77,9 +127,14 @@ function createVideoRow(video, index) {
 async function saveOne(video, button, statusNode) {
   if (button.classList.contains("done")) return;
 
+  if (folderSupported && !saveDirectory) {
+    showMessage("Choose a folder first (left sidebar), then click save.", "info");
+    return;
+  }
+
   button.disabled = true;
-  button.textContent = "Please wait...";
-  statusNode.textContent = "Getting your file ready...";
+  button.textContent = "wait...";
+  statusNode.textContent = "getting file ready...";
   statusNode.className = "video-status working";
 
   try {
@@ -96,19 +151,29 @@ async function saveOne(video, button, statusNode) {
 
     const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.detail || "Something went wrong. Try again.");
+      throw new Error(data.detail || "something went wrong");
     }
 
-    const fileUrl = `/api/files/${encodeURIComponent(data.filename)}`;
-    triggerFileDownload(fileUrl, data.filename);
+    const fileResponse = await fetch(`/api/files/${encodeURIComponent(data.filename)}`);
+    if (!fileResponse.ok) throw new Error("could not fetch file");
 
-    button.textContent = "Saved!";
+    const blob = await fileResponse.blob();
+    const where = await saveFileToFolder(data.filename, blob);
+
+    button.textContent = "done ~";
     button.classList.add("done");
-    statusNode.textContent = "Saved to your computer";
+    statusNode.textContent = where;
     statusNode.className = "video-status done";
   } catch (error) {
+    if (error.name === "AbortError") {
+      button.disabled = false;
+      button.textContent = "save ~";
+      statusNode.textContent = "cancelled";
+      statusNode.className = "video-status";
+      return;
+    }
     button.disabled = false;
-    button.textContent = "Try again";
+    button.textContent = "try again";
     statusNode.textContent = error.message;
     statusNode.className = "video-status error";
   }
@@ -120,11 +185,10 @@ form.addEventListener("submit", async (event) => {
   if (!url) return;
 
   loadBtn.disabled = true;
-  loadBtn.textContent = "Looking for videos...";
+  loadBtn.textContent = "looking...";
   sectionVideos.hidden = true;
   videoListEl.innerHTML = "";
-  showMessage("Hang on — we're reading your playlist...", "info");
-  setStep(0);
+  showMessage("reading your playlist...", "info");
 
   try {
     const response = await fetch("/api/playlist", {
@@ -136,14 +200,13 @@ form.addEventListener("submit", async (event) => {
     const data = await response.json();
     if (!response.ok) {
       throw new Error(
-        data.detail ||
-          "We couldn't find that playlist. Make sure you copied the full link from YouTube."
+        data.detail || "couldn't find that playlist — check your link"
       );
     }
 
     currentVideos = data.videos;
     playlistTitleEl.textContent = data.playlist_title;
-    playlistMetaEl.textContent = `${data.video_count} videos ready to save`;
+    playlistMetaEl.textContent = `${data.video_count} videos found`;
 
     data.videos.forEach((video, i) => {
       videoListEl.appendChild(createVideoRow(video, i));
@@ -151,23 +214,25 @@ form.addEventListener("submit", async (event) => {
 
     sectionVideos.hidden = false;
     hideMessage();
-    setStep(2);
-
     sectionVideos.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
     showMessage(error.message, "error");
-    setStep(0);
   } finally {
     loadBtn.disabled = false;
-    loadBtn.textContent = "Find my videos";
+    loadBtn.textContent = "find videos ~";
   }
 });
 
 downloadAllBtn.addEventListener("click", async () => {
+  if (folderSupported && !saveDirectory) {
+    showMessage("Choose a folder first (left sidebar), then click save all.", "info");
+    return;
+  }
+
   const rows = [...videoListEl.querySelectorAll(".video-row")];
   downloadAllBtn.disabled = true;
-  downloadAllBtn.textContent = "Saving all videos...";
-  showMessage("Saving each video one at a time. Please don't close this page.", "info");
+  downloadAllBtn.textContent = "saving all...";
+  showMessage("saving each video — please wait...", "info");
 
   let saved = 0;
   for (const row of rows) {
@@ -188,22 +253,13 @@ downloadAllBtn.addEventListener("click", async () => {
   }
 
   downloadAllBtn.disabled = false;
-  downloadAllBtn.textContent = "Save all videos to my computer";
+  downloadAllBtn.textContent = "save all ~";
 
   if (saved === rows.length) {
-    showMessage("All done! Every video has been saved to your computer.", "success");
+    showMessage(`all done! ${saved} files saved.`, "success");
   } else {
-    showMessage(
-      `Saved ${saved} of ${rows.length} videos. Click "Try again" on any that failed.`,
-      "info"
-    );
+    showMessage(`saved ${saved} of ${rows.length}. try again on any that failed.`, "info");
   }
 });
 
-// Start on step 2 (format choice) once user focuses the link box
-urlInput.addEventListener("focus", () => setStep(0));
-formatCards.forEach((card) => {
-  card.addEventListener("click", () => {
-    if (urlInput.value.trim()) setStep(1);
-  });
-});
+updateFolderUI();
